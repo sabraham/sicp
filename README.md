@@ -1,6 +1,6 @@
 Notes and Solutions to SICP
 ====
-
+![SICP Cover](http://mitpress.mit.edu/sicp/full-text/book/cover.jpg "SICP Cover")
 ## Introduction
 
 These are my notes and solutions to SICP. Notes are pretty verbose, an artifact of having had to memorize rote in the past~
