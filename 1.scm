@@ -540,6 +540,8 @@ circumference
     (= (expmod a n n) a))
   (try-it (+ 1 (random (- n 1)))))
 
+
+
 (define (fast-prime? n times)
   (cond ((= times 0) true)
         ((fermat-test n) (fast-prime? n (- times 1)))
@@ -643,4 +645,41 @@ circumference
 
 ;; Exercise 1.28
 
+(define (miller-rabin-test-once n)
+  (define (non-trivial x x-squared-mod)
+    (if (and (= 1 x-squared-mod)
+             (not (= x 1))
+             (not (= x (- n 1))))
+        0
+        x-squared-mod))
+  (define (square-mod x)
+    (non-trivial x (remainder (square x) n)))
+  (define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp) (square-mod (expmod base (/ exp 2) m)))
+          (else (remainder (* base (expmod base (- exp 1) m))
+                           m))))
+  (define (try-it a)
+    (= (expmod a (- n 1) n) 1))
+  (try-it (+ 1 (random (- n 1)))))
 
+(define (miller-rabin-test n times)
+  (cond
+   ((= times 0) #t)
+   ((miller-rabin-test-once n) (miller-rabin-test n (- times 1)))
+   (else #f)))
+
+
+(apply boolean/or
+       (map (lambda (x) (miller-rabin-test x 200))
+            (list 561 1105 1729 2465 2821 6601)))
+
+;; #f -- carmichael numbers are all false
+
+(apply boolean/and
+       (map (lambda (x) (miller-rabin-test x 500))
+            (list 3571 27751 89041)))
+
+;; #t -- primes pass
+
+;; 1.3 Formulating Abstractions with Higher-Order Procedures
