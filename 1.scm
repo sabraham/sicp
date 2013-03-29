@@ -815,3 +815,18 @@ circumference
   (define (relatively-prime-to-n? i) (relatively-prime? n i))
   (filtered-accumulate * 1 identity inc 1 (dec n) relatively-prime-to-n?))
 
+;; 1.3.2 Constructing Procedures Using Lambda
+
+;; lambda -- special form that creates procedures; used to create procs in the same
+;; way as define, but no name specified for the proc, so proc is not assoced
+;; with any name in the env
+
+;; let - special form to make anonymous bindings -- syntactic sugar over a lambda,
+;; meaning that scope is specified by the body of the let
+
+;; Exercise 1.34
+
+;; (define (f g) (g 2))
+;; (f f) => (f 2) => (2 2) => Error, object 2 is not applicable. ie 2 is not an
+;; operator. nb- expansion is independent of whether using
+;; applicative/normal-order evaluation.
