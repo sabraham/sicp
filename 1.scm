@@ -683,3 +683,135 @@ circumference
 ;; #t -- primes pass
 
 ;; 1.3 Formulating Abstractions with Higher-Order Procedures
+
+;; higher-order procedures - procs that manipulate procs
+
+;; 1.3.1 Procedures as Arguments
+
+(define (sum f next a b)
+  (if (> a b)
+      0
+      (+ (f a)
+         (sum f next (next a) b))))
+
+(define (identity x) x)
+(define (inc x) (+ x 1))
+(define (dec x) (- x 1))
+
+(define (sum-integers a b)
+  (sum identity inc a b))
+
+(define (sum-cubes a b)
+  (sum cube inc a b))
+
+(define (pi-sum a b)
+  (define (pi-term x)
+    (/ 1.0 (* x (+ x 2))))
+  (define (pi-next x)
+    (+ x 4))
+  (sum pi-term pi-next a b))
+
+(sum-integers 0 10)
+(sum-cubes 1 3)
+(* 8 (pi-sum 1 10000))
+
+(define (integral f a b dx)
+  (define (add-dx x) (+ x dx))
+  (* (sum f add-dx (+ a (/ dx 2.0))  b) dx))
+
+(integral cube 0 1 0.01)
+
+;; Exercise 1.29
+
+(define (simpson-int f a b n)
+  (define step (/ (- b a) n))
+  (define (next-step x) (+ x step))
+  (define (nnext-step x) (+ x step step))
+  (define (prev-step x) (- x step))
+  (* (+ (f a)
+        (* 2 (sum f next-step (next-step a) (prev-step b)))
+        (* 2 (sum f nnext-step (next-step a) (prev-step b)))
+        (f b))
+     (/ step 3)))
+
+(map (lambda (x) (< (abs (- (simpson-int cube 0 1 x) 0.25))
+               (abs (- (integral cube 0 1 (/ 1 x)) 0.25))))
+     (list 10 100 1000))
+
+;; simpson rule is more accurate in cases n = 10, 100, 1000
+
+;; Exercise 1.30
+
+(define (sum f next a b)
+  (define (iter a res)
+    (if (> a b)
+        res
+        (iter (next a) (+ (f a) res))))
+  (iter a 0))
+
+;; Exercise 1.31
+
+(define (product f next a b)
+  (if (> a b)
+      1
+      (* (product f next (next a) b)
+         (f a))))
+
+(define (factorial n)
+  (product identity inc 1 n))
+
+(define (wallis n)
+  (define (term n)
+    (if (even? n)
+        (/ (+ n 2) (+ n 1))
+        (/ (+ n 1) (+ n 2))))
+  (product term inc 1.0 n))
+
+(* 4 (wallis 1000))
+
+(define (product f next a b)
+  (define (iter a res)
+    (if (> a b)
+        res
+        (iter (next a) (* (f a) res))))
+  (iter a 1))
+
+;; Exercise 1.32
+
+(define (accumulate combiner null-value f next a b)
+  (if (> a b)
+      null-value
+      (combiner (f a) (accumulate combiner null-value f next (next a) b))))
+
+(define (sum f next a b)
+  (accumulate + 0 f next a b))
+
+(define (product f next a b)
+  (accumulate * 1 f next a b))
+
+(define (accumulate combiner null-value f next a b)
+  (define (iter a res)
+    (if (> a b)
+        res
+        (iter (next a) (combiner res (f a)))))
+  (iter a null-value))
+
+;; Exercise 1.33
+
+(define (filtered-accumulate combiner null-value f next a b pred)
+  (define (iter a res)
+    (if (> a b)
+        res
+        (iter (next a) (if (pred a) (combiner res (f a)) res))))
+  (iter a null-value))
+
+(define (sum-of-squared-primes a b)
+  (filtered-accumulate + 0 square inc a b prime?))
+
+(define (relatively-prime? n i)
+  (= 1 (gcd n i)))
+
+(define (product-of-relatively-prime n)
+  (define (relatively-prime-to-n? i) (relatively-prime? n i))
+  (filtered-accumulate * 1 identity inc 1 (dec n) relatively-prime-to-n?))
+
