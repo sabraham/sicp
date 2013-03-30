@@ -830,3 +830,5 @@ circumference
 ;; (f f) => (f 2) => (2 2) => Error, object 2 is not applicable. ie 2 is not an
 ;; operator. nb- expansion is independent of whether using
 ;; applicative/normal-order evaluation.
+
+;; 1.3.3 Procedures as General Methods
