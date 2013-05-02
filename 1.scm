@@ -110,7 +110,7 @@ circumference
 
 ;; clause - pair of expressions in a cond -- first is pred, second is
 ;; consequeent expression to eval if pred is true (in lisp, true = not false =
-;; not #f) 
+;; not #f)
 ;;
 ;; predicate - an expression/proc whose value is either true or false
 ;;
@@ -463,7 +463,7 @@ circumference
 (define (fast-exp-iter b n)
   (define (iter b n a)
     (cond ((= n 0) a)
-          ((even? n) (iter (square b) (/ n 2) a)) 
+          ((even? n) (iter (square b) (/ n 2) a))
           (else (iter b (- n 1) (* a b)))))
   (iter b n 1))
 
@@ -481,7 +481,7 @@ circumference
 (define (fast-*-iter a b)
   (define (iter a b prod) ;; ab is invariant
     (cond
-     ((= b 0) prod) 
+     ((= b 0) prod)
      ((even? b) (iter (double a) (halve b) prod))
      (else (iter a (- b 1) (+ prod a)))))
   (iter a b 0))
@@ -558,16 +558,16 @@ circumference
 (define (timed-prime-test n)
   (start-prime-test n (runtime)))
 
-(define (start-prime-test n start-time) 
-  (if (prime? n) 
+(define (start-prime-test n start-time)
+  (if (prime? n)
       (report-prime n (- (runtime) start-time))))
 
 (define (report-prime n elapsed-time)
   (newline)
   (display n)
-  (display " *** ") 
+  (display " *** ")
   (display elapsed-time))
-  
+
 (define (search-for-primes a b)
   (define (iter a b)
     (if (<= a b) (timed-prime-test a))
@@ -606,8 +606,8 @@ circumference
 
 ;; Exercise 1.24
 
-(define (start-prime-test n start-time) 
-  (if (fast-prime? n 1000) 
+(define (start-prime-test n start-time)
+  (if (fast-prime? n 1000)
       (report-prime n (- (runtime) start-time))))
 
 (search-for-primes 100000000000000000000 100000000000000000100) ; 0.04
@@ -832,3 +832,115 @@ circumference
 ;; applicative/normal-order evaluation.
 
 ;; 1.3.3 Procedures as General Methods
+
+(define (close-enough? x y) (< (abs (- x y)) 0.001))
+
+(define (search f neg-point pos-point)
+  (let ((midpoint (average neg-point pos-point)))
+    (if (close-enough? neg-point pos-point)
+        midpoint
+        (let ((test-value (f midpoint)))
+          (cond ((positive? test-value)
+                 (search f neg-point midpoint))
+                ((negative? test-value)
+                 (search f midpoint pos-point))
+                (else midpoint))))))
+
+(define (half-interval-method f a b)
+  (let ((a-value (f a))
+        (b-value (f b)))
+    (cond ((and (negative? a-value) (positive? b-value))
+           (search f a b))
+          ((and (negative? b-value) (positive? a-value))
+           (search f b a))
+          (else
+           (error "Values are not of opposite sign" a b)))))
+
+(define tolerance 0.00001)
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ((next (f guess)))
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(fixed-point cos 1.0)
+
+;; average damping - technique of averaging successive approximations to a soln
+
+;; Exercise 1.35
+
+(fixed-point (lambda (x) (+ 1 (/ 1 x))) 1.0)
+
+;; Exercise 1.36
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ((next (f guess)))
+      (display guess)
+      (newline)
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+;; 35 steps
+(fixed-point (lambda (x) (/ (log 1000) (log x))) 2.0)
+;; 9 steps w/average dampening
+(fixed-point (lambda (x) (* 0.5 (+ x (/ (log 1000) (log x))))) 2.0)
+
+;; Exercise 1.37
+
+(define (cont-frac n d k)
+  (define (rec n d i)
+    (if (= i k)
+        (/ (n i) (d i))
+        (/ (n i) (+ (d i) (rec n d (inc i))))))
+  (rec n d 1))
+
+(cont-frac (lambda (i) 1.0)
+           (lambda (i) 1.0)
+           12)
+
+;; k=12 gets us 4-decimal place accuracy
+;; b- iterative version
+
+(define (cont-frac-iter n d k)
+  (define (iter n d i state)
+    (if (= i 0)
+        state
+        (iter n d (dec i) (/ (n i) (+ (d i) state)))))
+  (iter n d (dec k) (/ (n k) (d k))))
+
+(cont-frac-iter (lambda (i) 1.0)
+                (lambda (i) 1.0)
+                12)
+
+;; Exercise 1.38
+(define (approx-e k)
+  (define (decimal-approx k)
+    (cont-frac-iter (lambda (i) 1.0)
+                    (lambda (i)
+                      (if (= (remainder i 3) 2)
+                          (+ (* (/ (- i 2) 3) 2) 2)
+                          1.0))
+                    k))
+  (+ 2 (decimal-approx k)))
+
+(approx-e 10)
+
+;; Exercise 1.39
+(define (tan-cf x k)
+  (define (n i) (if (= i 1)
+                    x
+                    (* -1 (square x))))
+  (define (d i) (dec (* 2 i)))
+  (cont-frac-iter n d k))
+
+;; 1.3.4 Procedures as Returned Values
