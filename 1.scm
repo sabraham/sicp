@@ -944,3 +944,132 @@ circumference
   (cont-frac-iter n d k))
 
 ;; 1.3.4 Procedures as Returned Values
+
+(define (average-damp f)
+  (lambda (x) (average x (f x))))
+
+(define (sqrt x)
+  (fixed-point (average-damp (lambda (y) (/ x y)))
+               1.0))
+
+(define (cube-root x)
+  (fixed-point (average-damp (lambda (y) (/ x (square y))))
+               1.0))
+
+
+(define dx 0.00001)
+(define (deriv g)
+  (lambda (x)
+    (/ (- (g (+ x dx)) (g x))
+       dx)))
+
+(define (cube x) (* x x x))
+((deriv cube) 5)
+
+(define (newton-transform g)
+  (lambda (x)
+    (- x (/ (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+(define (fixed-point-of-transform g transform guess)
+  (fixed-point (transform g) guess))
+
+;; 2 ways to write sqrt, both using fixed-point
+
+(define (sqrt x)
+  (fixed-point-of-transform (lambda (y) (/ x y))
+                            average-damp
+                            1.0))
+
+(define (sqrt x)
+  (fixed-point-of-transform (lambda (y) (-  (square y) x))
+                            newton-transform
+                            1.0))
+
+;; first-class elements:
+;; - may be named by variables
+;; - may be passed as arguments to procedures
+;; - may be returned as the result of procedures
+;; - may be included in data structures
+
+;; major implementation cost of first-class procedures: 
+;; allowing procs to be returned as vals requires reserving storage for the
+;; procs free variables, even while the proc is not executing
+
+;; Exercise 1.40
+
+(define (cubic a b c)
+  (lambda (x) (+ (cube x) (* a (square x)) (* b x) c)))
+
+(newtons-method (cubic 1 1 1) 1)
+
+;; Exercise 1.41
+
+(define (double f)
+  (lambda (x) (f (f x))))
+
+;; (((double (double double)) inc) 5)
+;; psuedocode =
+;; (((double 4x) inc) 5)
+;; ((4x 4x) inc) 5)
+;; ((16x inc) 5)
+;; 21
+
+;; Exercise 1.42
+
+(define (compose f g)
+  (lambda (x) (f (g x))))
+
+((compose square inc) 6)
+
+;; Exercise 1.43
+
+(define (repeated f n)
+  (if (= n 1)
+      f
+      (compose f (repeated f (dec n)))))
+
+((repeated square 2) 5)
+
+;; Exercise 1.44
+
+(define (smooth f)
+  (lambda (x) (/ (+ (f (- x dx))
+               (f x)
+               (f (+ x dx)))
+            3.0)))
+
+(define (n-fold-smoothed f n)
+  (lambda (x) ((repeated smooth n)
+          f)))
+
+;; Exercise 1.45
+TODO
+
+;; Exercise 1.46
+
+(define (iterative-improve good-enough? do-better)
+  (define (ret guess)
+    (if (good-enough? guess)
+        guess
+        (ret (do-better guess))))
+  ret)
+
+(define (sqrt x)
+  (define (good-enough? guess)
+    (< (abs (- (square guess) x)) 0.0001))
+  (define (do-better guess)
+    (average guess (/ x guess)))
+  ((iterative-improve good-enough? do-better) 1.0))
+
+(sqrt 25.0)
+
+(define (fixed-point f first-guess)
+  (define (good-enough? guess)
+    (< (abs (- (f guess) guess)) 0.0001))
+  (define (do-better guess)
+    ((average-damp f) guess))
+  ((iterative-improve good-enough? do-better) first-guess))
+
